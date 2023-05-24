@@ -213,7 +213,7 @@ export default {
       tableData: [],
       total: 0,
       pageNum: 1,
-      pageSize: 5,
+      pageSize: 10,
       username: "",
       email: "",
       address: "",
@@ -243,10 +243,10 @@ export default {
         this.collapseBtnClass = "el-icon-s-fold"
       }
     },
-    load() {
+    load(pageNum = this.pageNum) {
       request.get("/user/page", {
         params: {
-          pageNum: this.pageNum,
+          pageNum: pageNum,
           pageSize: this.pageSize,
           username: this.username,
           email: this.email,
@@ -271,7 +271,8 @@ export default {
         if (res) {
           this.$message.success("Success")
           this.dialogFormVisible = false
-          this.load()
+          let pageNumber = Math.floor(this.total / this.pageSize) + 1
+          this.load(pageNumber)
         } else {
           this.$message.error("Error")
         }

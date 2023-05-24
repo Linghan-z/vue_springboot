@@ -34,13 +34,21 @@ public class CodeGenerator {
                 }))
                 .packageConfig(builder -> {
                     builder.parent("com.zlhhh.springboot") // 设置父包名
-                            .moduleName("") // 设置父包模块名
+                            .moduleName(null) // 设置父包模块名
                             .pathInfo(Collections.singletonMap(OutputFile.xml, "/Users/zlh/springboot/src/main/resources/mapper/")); // 设置mapperXml生成路径
                 })
                 .strategyConfig(builder -> {
                     builder.addInclude("sys_user") // 设置需要生成的表名
                             .addTablePrefix("sys_", "t_"); // 设置过滤表前缀
+                    builder.serviceBuilder().enableFileOverride(); // 文件覆盖配置
+                    builder.controllerBuilder().enableFileOverride()  // 文件覆盖配置
+                            .enableHyphenStyle()  //开启驼峰转连字符
+                            .enableRestStyle();  //开启生成@RestController 控制器
+                    builder.entityBuilder().enableLombok()  // Lombok
+                            .enableFileOverride();  // 文件覆盖配置
+                    builder.mapperBuilder().enableFileOverride();  // 文件覆盖配置
                 })
+
 //                .templateEngine(new FreemarkerTemplateEngine()) // 使用Freemarker引擎模板，默认的是Velocity引擎模板
                 .execute();
     }
