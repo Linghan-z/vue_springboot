@@ -42,6 +42,10 @@ public class UserController {
     public boolean delete(@PathVariable Integer id) {
         return userService.removeById(id);
     }
+    @PostMapping("/del/batch")
+    public boolean deleteBatch(@RequestBody List<Integer> ids) {
+        return userService.removeBatchByIds(ids);
+    }
 
     // 分页查询
     // @RequestParam 接收 ?pageNum=1&pageSize=10
@@ -65,7 +69,7 @@ public class UserController {
     public IPage<User> findPage(@RequestParam Integer pageNum,
                                 @RequestParam Integer pageSize,
                                 @RequestParam(defaultValue = "") String username,
-                                @RequestParam(defaultValue = "") String nickname,
+                                @RequestParam(defaultValue = "") String email,
                                 @RequestParam(defaultValue = "") String address,
                                 @RequestParam(defaultValue = "") String avatar) {
         IPage<User> page = new Page<>(pageNum, pageSize);
@@ -75,9 +79,10 @@ public class UserController {
 //
 //        }
         lambdaQueryWrapper.like(Strings.isNotEmpty(username),User::getUsername,username);
-        lambdaQueryWrapper.like(Strings.isNotEmpty(nickname), User::getNickname, nickname);
+        lambdaQueryWrapper.like(Strings.isNotEmpty(email), User::getEmail, email);
         lambdaQueryWrapper.like(Strings.isNotEmpty(address), User::getAddress, address);
         lambdaQueryWrapper.like(Strings.isNotEmpty(avatar), User::getAvatar, avatar);
+        lambdaQueryWrapper.orderByDesc(User::getId);
         return userService.page(page, lambdaQueryWrapper);
     }
 
