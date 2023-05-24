@@ -54,17 +54,35 @@ public class UserController {
         return userService.getById(id);
     }
 
-    @GetMapping("/page")
-    public Page<User> findPage(@RequestParam Integer pageNum,
-                               @RequestParam Integer pageSize,
-                               @RequestParam(defaultValue = "") String username,
-                               @RequestParam(defaultValue = "") String email,
-                               @RequestParam(defaultValue = "") String address) {
+    @GetMapping("/search")
+    public Page<User> fuzzySearch(@RequestParam Integer pageNum,
+                                  @RequestParam Integer pageSize,
+                                  @RequestParam(defaultValue = "") String username,
+                                  @RequestParam(defaultValue = "") String email,
+                                  @RequestParam(defaultValue = "") String address) {
         LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.like(Strings.isNotEmpty(username),User::getUsername,username);
+        lambdaQueryWrapper.like(Strings.isNotEmpty(username), User::getUsername, username);
         lambdaQueryWrapper.like(Strings.isNotEmpty(email), User::getEmail, email);
         lambdaQueryWrapper.like(Strings.isNotEmpty(address), User::getAddress, address);
         return userService.page(new Page<>(pageNum, pageSize), lambdaQueryWrapper);
     }
+
+    @GetMapping("/page")
+    public Page<User> findPage(@RequestParam Integer pageNum,
+                               @RequestParam Integer pageSize) {
+        return userService.page(new Page<>(pageNum, pageSize));
+    }
+//    @GetMapping("/page")
+//    public Page<User> findPage(@RequestParam Integer pageNum,
+//                               @RequestParam Integer pageSize,
+//                               @RequestParam(defaultValue = "") String username,
+//                               @RequestParam(defaultValue = "") String email,
+//                               @RequestParam(defaultValue = "") String address) {
+//        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+//        lambdaQueryWrapper.like(Strings.isNotEmpty(username), User::getUsername, username);
+//        lambdaQueryWrapper.like(Strings.isNotEmpty(email), User::getEmail, email);
+//        lambdaQueryWrapper.like(Strings.isNotEmpty(address), User::getAddress, address);
+//        return userService.page(new Page<>(pageNum, pageSize), lambdaQueryWrapper);
+//    }
 
 }
