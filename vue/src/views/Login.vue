@@ -1,7 +1,7 @@
 <template>
   <div class="login">
-    <el-form ref="loginForm" class="login-form">
-      <h3 class="title">管理系统</h3>
+    <el-form :model="user" class="login-form" status-icon :rules="rules" ref="userForm">
+      <h2 class="title">管理系统</h2>
       <el-form-item prop="username">
         <el-input
             v-model="user.username"
@@ -19,20 +19,29 @@
             auto-complete="off"
             placeholder="密码"
             prefix-icon="el-icon-lock"
+            show-password
             @keyup.enter.native="handleLogin"
         >
         </el-input>
       </el-form-item>
-      <el-form-item style="width:100%;">
-        <el-button
-            size="medium"
-            type="primary"
-            style="width:100%;"
-            @click.native.prevent="handleLogin"
-        >
-          <span>登 录</span>
-        </el-button>
+      <el-form-item style="width:100% ">
+        <div style="width: 220px;align-items: center;margin: auto; ">
+          <el-button
+              size="medium"
+              type="primary"
+              style="width:100px"
+              @click.native.prevent="handleLogin"
+          >
+            <span>登 录</span>
+          </el-button>
+          <el-button
+              size="medium"
+              type="warning"
+              style="width:100px">
 
+            <span>注 册</span>
+          </el-button>
+        </div>
       </el-form-item>
     </el-form>
     <!--  底部  -->
@@ -47,11 +56,35 @@ export default {
   name: "Login",
   data() {
     return {
-      user: {}
+      user: {},
+      rules: {
+        username: [
+          {required: true, message: "请输入用户名", trigger: 'blur'}
+        ],
+        password: [
+          {required: true, message: "请输入密码", trigger: 'blur'},
+          {min: 2, max: 16, message: "长度在 2 到 16 个字符", trigger: 'blur'}
+        ],
+      }
     }
   },
   methods: {
-    handleLogin(){
+    handleLogin() {
+      this.$refs['userForm'].validate((valid) => {
+        if (valid) {  // 表单校验合法
+          this.request.post("/user/login", this.user).then(res => {
+            if (!res) {
+              this.$message.error("用户名或密码错误")
+            } else {
+              // setTimeout(() =>{this.$router.push("/")},3000)  // 登陆后延迟跳转
+              this.$router.push("/")
+            }
+          })
+        } else {
+          console.log('error submit!!');
+          return false;
+        }
+      });
 
     }
   }

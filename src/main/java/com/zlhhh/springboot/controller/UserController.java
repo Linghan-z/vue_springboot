@@ -1,7 +1,9 @@
 package com.zlhhh.springboot.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.zlhhh.springboot.controller.dto.UserDTO;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,19 +30,29 @@ public class UserController {
     @Resource
     private IUserService userService;
 
+    @PostMapping("/login")
+    public boolean login(@RequestBody UserDTO userDTO) {
+        String username = userDTO.getUsername();
+        String password = userDTO.getPassword();
+        if (StrUtil.isBlank(username) || StrUtil.isBlank(password)) {
+            return false;
+        }
+        return userService.login(userDTO);
+    }
+
     @PostMapping
-    public Boolean save(@RequestBody User user) {
+    public boolean save(@RequestBody User user) {
         // 新增或更新
         return userService.saveOrUpdate(user);
     }
 
     @PostMapping("/del/batch")
-    public boolean deleteBatch(@RequestBody List<Integer> ids) {
+    public Boolean deleteBatch(@RequestBody List<Integer> ids) {
         return userService.removeBatchByIds(ids);
     }
 
     @DeleteMapping("/{id}")
-    public Boolean delete(@PathVariable Integer id) {
+    public boolean delete(@PathVariable Integer id) {
         return userService.removeById(id);
     }
 
@@ -72,6 +84,8 @@ public class UserController {
                                @RequestParam Integer pageSize) {
         return userService.page(new Page<>(pageNum, pageSize));
     }
+
+    
 //    @GetMapping("/page")
 //    public Page<User> findPage(@RequestParam Integer pageNum,
 //                               @RequestParam Integer pageSize,
