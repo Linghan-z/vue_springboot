@@ -1,13 +1,13 @@
 <template>
   <div class="login">
     <el-form :model="user" class="login-form" status-icon :rules="rules" ref="userForm">
-      <h2 class="title">管理系统</h2>
+      <h2 class="title">注册</h2>
       <el-form-item prop="username">
         <el-input
             v-model="user.username"
             type="text"
             auto-complete="off"
-            placeholder="账号"
+            placeholder="请输入账号"
             prefix-icon="el-icon-user"
         >
         </el-input>
@@ -17,7 +17,19 @@
             v-model="user.password"
             type="password"
             auto-complete="off"
-            placeholder="密码"
+            placeholder="请输入密码"
+            prefix-icon="el-icon-lock"
+            show-password
+            @keyup.enter.native="handleLogin"
+        >
+        </el-input>
+      </el-form-item>
+      <el-form-item prop="confirmPassword">
+        <el-input
+            v-model="user.confirmPassword"
+            type="password"
+            auto-complete="off"
+            placeholder="确认密码"
             prefix-icon="el-icon-lock"
             show-password
             @keyup.enter.native="handleLogin"
@@ -32,15 +44,14 @@
               style="width:100px"
               @click.native.prevent="handleLogin"
           >
-            <span>登 录</span>
+            <span>注 册</span>
           </el-button>
           <el-button
               size="medium"
               type="warning"
               style="width:100px"
-              @click="$router.push('/register')">
-
-            <span>注 册</span>
+              @click="$router.push('/login')">
+            <span>返 回</span>
           </el-button>
         </div>
       </el-form-item>
@@ -66,6 +77,10 @@ export default {
           {required: true, message: "请输入密码", trigger: 'blur'},
           {min: 2, max: 16, message: "长度在 2 到 16 个字符", trigger: 'blur'}
         ],
+        confirmPassword: [
+          {required: true, message: "请输入密码", trigger: 'blur'},
+          {min: 2, max: 16, message: "长度在 2 到 16 个字符", trigger: 'blur'}
+        ],
       }
     }
   },
@@ -73,11 +88,16 @@ export default {
     handleLogin() {
       this.$refs['userForm'].validate((valid) => {
         if (valid) {  // 表单校验合法
-          this.request.post("/user/login", this.user).then(res => {
+          if (this.user.password !== this.user.confirmPassword) {
+            this.$message.error("两次输入密码不一致")
+            return false
+          }
+          this.request.post("/user/register", this.user).then(res => {
             if (res.code === '200') {
-              localStorage.setItem("user", JSON.stringify(res.data))  // 存储用户信息到浏览器
-              setTimeout(() =>{this.$router.push("/manage")},500)  // 登陆后延迟跳转\
-              this.$message.success("登陆成功")
+              setTimeout(() => {
+                this.$router.push("/login")
+              }, 500)  // 登陆后延迟跳转\
+              this.$message.success("注册成功")
               // this.$router.push("/")
             } else {
               this.$message.error(res.msg)

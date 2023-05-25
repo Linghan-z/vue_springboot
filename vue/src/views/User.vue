@@ -144,8 +144,8 @@ export default {
       }).then(res => {
         console.log(res)
 
-        this.tableData = res.records
-        this.total = res.total
+        this.tableData = res.data.records
+        this.total = res.data.total
 
       })
       // fetch("http://localhost:8080/user/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&username=" + this.username)
@@ -165,15 +165,15 @@ export default {
           address: this.address
         }
       }).then(res => {
-        console.log(res)
+        console.log(res.data)
         this.pageNum = 1
-        this.tableData = res.records
-        this.total = res.total
+        this.tableData = res.data.records
+        this.total = res.data.total
       })
     },
     save() {
       this.request.post("/user", this.form).then(res => {
-        if (res) {
+        if (res.data) {
           this.$message.success("Success")
           this.dialogFormVisible = false
           let pageNumber = Math.floor(this.total / this.pageSize) + 1
@@ -185,7 +185,7 @@ export default {
     },
     del(id) {
       this.request.delete("/user/" + id).then(res => {
-        if (res) {
+        if (res.data) {
           this.$message.success("Delete success")
           this.load()
         } else {
@@ -207,7 +207,7 @@ export default {
     delBatch() {
       let ids = this.multipleSelection.map(v => v.id)  //[{}, {}, {}] => [1, 2, 3]
       this.request.post("/user/del/batch", ids).then(res => {
-        if (res) {
+        if (res.data) {
           this.$message.success("Delete batch success")
           this.load()
         } else {

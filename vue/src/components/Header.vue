@@ -8,16 +8,18 @@
         <el-breadcrumb-item>{{ currentPathName }}</el-breadcrumb-item>
       </el-breadcrumb>
     </div>
-    <el-dropdown style="width: 70px; cursor:pointer">
+    <el-dropdown style="width: 100px; cursor:pointer">
       <div>
-        <img src="" alt=""
+        <img :src="user.avatarUrl" alt=""
              style="width: 30px; border-radius: 50%; position: relative;top: 10px;right: 5px">
-        <span style="user-select: none">管理员</span><i class="el-icon-arrow-down" style="margin-left: 5px; user-select: none"></i>
+        <span style="user-select: none">{{ user.nickname }}</span><i class="el-icon-arrow-down" style="margin-left: 5px; user-select: none"></i>
       </div>
       <el-dropdown-menu slot="dropdown" style="width: 100px; text-align: center">
-        <el-dropdown-item style="font-size: 14px; padding: 5px 0">个人信息</el-dropdown-item>
         <el-dropdown-item style="font-size: 14px; padding: 5px 0">
-          <router-link to="/login" style="text-decoration: none">退出</router-link></el-dropdown-item>
+          <router-link to="/person" style="text-decoration: none">个人信息</router-link>
+        </el-dropdown-item>
+        <el-dropdown-item style="font-size: 14px; padding: 5px 0">
+          <span style="text-decoration: none" @click="logout" >退出</span></el-dropdown-item>
       </el-dropdown-menu>
     </el-dropdown>
   </div>
@@ -26,6 +28,11 @@
 <script>
 export default {
   name: "Header",
+  data() {
+    return {
+      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {}
+    }
+  },
   props: {
     collapseBtnClass: String,
     collapse: '',
@@ -38,6 +45,16 @@ export default {
   watch: {  //监听路由变化
     currentPathName (newVal, oldVal) {
       console.log(newVal)
+    }
+  },
+  methods: {
+    // collapse() {
+    //   this.$emit("asideCollapse")
+    // },
+    logout() {
+      this.$router.push("/login")
+      localStorage.removeItem("user")
+      this.$message.success("退出成功")
     }
   }
 }
