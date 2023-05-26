@@ -11,6 +11,7 @@ import com.zlhhh.springboot.exception.ServiceException;
 import com.zlhhh.springboot.mapper.UserMapper;
 import com.zlhhh.springboot.service.IUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zlhhh.springboot.utils.TokenUtils;
 import org.apache.ibatis.annotations.One;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +33,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         User one = getUserInfo(userDTO);
         if (one != null) {  // 业务异常
             BeanUtil.copyProperties(one, userDTO, true);
+            // 设置token
+            String token = TokenUtils.genToken(one.getId().toString(), one.getPassword().toString());
+            userDTO.setToken(token);
+
             return userDTO;
         } else {
             // 失败会抛出异常，抛出异常之后会被全局异常捕获器GlobalExceptionHandler捕获到，捕获完之后返回一个error

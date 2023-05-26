@@ -76,7 +76,8 @@ export default {
           this.request.post("/user/login", this.user).then(res => {
             if (res.code === '200') {
               localStorage.setItem("user", JSON.stringify(res.data))  // 存储用户信息到浏览器
-              setTimeout(() =>{this.$router.push("/")},500)  // 登陆后延迟跳转\
+              // setTimeout(() =>{this.$router.push("/")},500)  // 登陆后延迟跳转\
+              this.$router.push("/")
               this.$message.success("登陆成功")
               // this.$router.push("/")
             } else {
