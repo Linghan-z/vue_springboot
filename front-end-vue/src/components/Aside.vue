@@ -19,6 +19,9 @@
       <el-menu-item index="/user">
         <template slot="title"><i class="el-icon-s-custom"></i>用户管理</template>
       </el-menu-item>
+      <el-menu-item index="/file">
+        <template slot="title"><i class="el-icon-document"></i>文件管理</template>
+      </el-menu-item>
       <el-submenu index="2-4">
         <template slot="title">选项4</template>
         <el-menu-item index="2-4-1">选项4-1</el-menu-item>
