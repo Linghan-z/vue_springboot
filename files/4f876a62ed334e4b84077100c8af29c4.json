@@ -1,6 +1,0 @@
-{
-  "timestamp": 1685097804628,
-  "status": 500,
-  "error": "Internal Server Error",
-  "path": "/file/upload"
-}

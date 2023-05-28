@@ -2,18 +2,27 @@ package com.zlhhh.springboot.controller;
 
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.zlhhh.springboot.common.Constants;
 import com.zlhhh.springboot.common.Result;
 import com.zlhhh.springboot.entity.Files;
 import com.zlhhh.springboot.entity.User;
 import com.zlhhh.springboot.mapper.FileMapper;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +36,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+
 /**
  * 文件上传相关接口
  */
@@ -39,6 +49,19 @@ public class FileController {
     @Resource
     private FileMapper fileMapper;
 
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;  // 操纵字符串
+
+
+    // 删除缓存
+    private void flushRedis(String key) {
+        stringRedisTemplate.delete(key);
+    }
+
+    // 设置缓存
+    private void setRedis(String key, String value) {
+        stringRedisTemplate.opsForValue().set(key, value);
+    }
 
     /**
      * 文件上传接口
@@ -51,6 +74,7 @@ public class FileController {
 //    @PostMapping("/upload")
 //    public String upload(@RequestParam MultipartFile file) throws IOException {
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
+
     public String upload(@RequestPart("file") MultipartFile file) throws IOException {
         String originalFilename = file.getOriginalFilename();
         String type = FileUtil.extName(originalFilename);
@@ -81,6 +105,7 @@ public class FileController {
         } else {
             // 数据库不存在重复文件，则不删除刚才上传的文件
             url = "http://localhost:8080/file/" + fileUUid;
+            System.out.println(url);
         }
 
 
@@ -92,6 +117,21 @@ public class FileController {
         saveFile.setUrl(url);
         saveFile.setMd5(md5);
 
+        //方法一： 直接清空redis缓存
+        flushRedis(Constants.FILES_KEY);
+
+//        //方法二： 从redis里取出数据,再设置，不需要查询数据库
+//        String json = stringRedisTemplate.opsForValue().get(Constants.FILES_KEY);
+//        List<Files> files1 = JSONUtil.toBean(json, new TypeReference<List<Files>>() {
+//        }, true);
+//        files1.add(saveFile);
+//        setRedis(Constants.FILES_KEY, JSONUtil.toJsonStr(files1));
+//
+//        // 方法三：
+//        // 从数据库查出数据
+//        List<Files> files = fileMapper.selectList(null);
+//        // 设置最新的缓存
+//        setRedis(Constants.FILES_KEY, JSONUtil.toJsonStr(files));
 
         fileMapper.insert(saveFile);
         return url;
@@ -136,46 +176,89 @@ public class FileController {
 
     /**
      * 分页查询
+     *
      * @param pageNum
      * @param pageSize
      * @param name
      * @return
      */
     @GetMapping("/page")
+//    @Cacheable(value = "files")
+//    @Cacheable(value = "files", key = "'files'")
     public Result findPage(@RequestParam Integer pageNum,
-                              @RequestParam Integer pageSize,
-                              @RequestParam(defaultValue = "") String name) {
-        LambdaQueryWrapper<Files> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(Files::getIs_delete, false);  // 查询未删除的记录
-        lambdaQueryWrapper.like(Strings.isNotEmpty(name), Files::getName, name);
-        return Result.success(fileMapper.selectPage(new Page<>(pageNum, pageSize), lambdaQueryWrapper));
+                           @RequestParam Integer pageSize,
+                           @RequestParam(defaultValue = "") String name) {
+        // redis
+        // 1. 从缓存获取数据
+        String jsonStr = stringRedisTemplate.opsForValue().get(Constants.FILES_KEY);
+        Page<Files> filesPage;
+        if (StrUtil.isBlank(jsonStr)) {  // 2-1. 取出的json是空的
+            LambdaQueryWrapper<Files> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+            lambdaQueryWrapper.eq(Files::getIs_delete, false);  // 查询未删除的记录
+            lambdaQueryWrapper.like(Strings.isNotEmpty(name), Files::getName, name);
+            filesPage = fileMapper.selectPage(new Page<>(pageNum, pageSize), lambdaQueryWrapper);  // 3.从数据库取出数据
+            // 4. 再去缓存到redis
+            stringRedisTemplate.opsForValue().set(Constants.FILES_KEY, JSONUtil.toJsonStr(filesPage));
+        } else {
+            //2-2. 如果有，从redis缓存中获取数据
+            filesPage = JSONUtil.toBean(jsonStr, new TypeReference<Page<Files>>() {
+            }, true);
+        }
+        return Result.success(filesPage);
     }
+//    @GetMapping("/page")
+////    @Cacheable(value = "files")
+////    @Cacheable(value = "files", key = "'files'")
+//    public Result findPage(@RequestParam Integer pageNum,
+//                              @RequestParam Integer pageSize,
+//                              @RequestParam(defaultValue = "") String name) {
+//        LambdaQueryWrapper<Files> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+//        lambdaQueryWrapper.eq(Files::getIs_delete, false);  // 查询未删除的记录
+//        lambdaQueryWrapper.like(Strings.isNotEmpty(name), Files::getName, name);
+//        return Result.success(fileMapper.selectPage(new Page<>(pageNum, pageSize), lambdaQueryWrapper));
+//    }
 
 
     @PostMapping("/update")
+//    @CachePut(value="files", key = "'files'")  // 咋不能用？？
+//    @CacheEvict(value = "files", allEntries = true, key = "'files'")
     public Result save(@RequestBody Files files) {
         // 更新
-        return Result.success(fileMapper.updateById(files));
+        fileMapper.updateById(files);
+
+        // 清空redis缓存
+        flushRedis(Constants.FILES_KEY);
+        return Result.success(fileMapper.selectList(null));
     }
 
     @DeleteMapping("/{id}")
+    // # 清除一条缓存，key 为要清空的数据
+//    @CacheEvict(value = "files", allEntries = true, key = "'files'")
     public Result delete(@PathVariable Integer id) {
         Files files = fileMapper.selectById(id);
         files.setIs_delete(true);
         fileMapper.updateById(files);
+        // 清空redis缓存
+        flushRedis(Constants.FILES_KEY);
+
         return Result.success();
     }
 
     @PostMapping("/del/batch")
+//    @CacheEvict(value = "files", allEntries = true)
     public Result deleteBatch(@RequestBody List<Integer> ids) {
         // select * from sys_file where id in (id,id,id...)
         LambdaQueryWrapper<Files> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.in(Files::getId,ids);
+        lambdaQueryWrapper.in(Files::getId, ids);
         List<Files> files = fileMapper.selectList(lambdaQueryWrapper);
-        for (Files file : files){
+        for (Files file : files) {
             file.setIs_delete(true);
             fileMapper.updateById(file);
         }
+
+        // 清空redis缓存
+        flushRedis(Constants.FILES_KEY);
+
         return Result.success();
     }
 
